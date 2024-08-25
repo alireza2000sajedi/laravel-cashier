@@ -1,0 +1,52 @@
+{
+    "name": "ars/laravel-cashier",
+    "description": "A powerful package for Laravel that facilitates seamless management of virtual currency, transaction handling, balance management, and fund transfers within your applications.",
+    "type": "library",
+    "license": "MIT",
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "authors": [
+        {
+            "name": "Alireza Sajedi",
+            "email": "alireza2000sajedi@gmail.com",
+            "homepage": "https://github.com/alireza2000sajedi",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=8.0",
+        "illuminate/support": "^9.0|^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ars\\Cashier\\": "src/"
+        }
+    },
+    "homepage": "https://github.com/alireza2000sajedi/laravel-cashier",
+    "support": {
+        "issues": "https://github.com/alireza2000sajedi/laravel-cashier/issues",
+        "source": "https://github.com/alireza2000sajedi/laravel-cashier"
+    },
+    "keywords": [
+        "laravel",
+        "cashier",
+        "wallet",
+        "virtual currency",
+        "transactions",
+        "balance management",
+        "payment",
+        "laravel package",
+        "financial",
+        "fund transfers"
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Ars\\Cashier\\CashierServiceProvider"
+            ],
+            "aliases": {
+                "Cashier": "Ars\\Cashier\\Facades\\Cashier"
+            }
+        }
+    }
+}
