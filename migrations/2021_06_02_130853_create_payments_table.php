@@ -6,6 +6,13 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected string $table;
+
+    public function __construct()
+    {
+        $this->table = (new \Ars\Cashier\Models\Payment())->getTable();
+    }
+
     /**
      * Run the migrations.
      *
@@ -13,16 +20,20 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('payments', function (Blueprint $table) {
+        Schema::create($this->table, function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->nullableMorphs('paymentable');
             $table->decimal('amount', 16, 4)->default(0.00);
             $table->string('authority');
             $table->string('ref_id')->nullable();
             $table->string('status_code')->nullable();
-            $table->string('gateway');
+            $table->string('gateway', 50);
             $table->timestamp('payed_at')->nullable();
             $table->timestamps();
+
+            $table->index('payed_at');
+            $table->index('authority');
+            $table->unique(['amount', 'authority']);
         });
     }
 
@@ -33,6 +44,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('payments');
+        Schema::dropIfExists($this->table);
     }
 };

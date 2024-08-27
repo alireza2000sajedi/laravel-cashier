@@ -26,7 +26,7 @@ class CashierServiceProvider extends ServiceProvider
 
         // Publish configuration file
         $this->publishes([
-            __DIR__ . '/../../config/otp-code.php' => config_path('otp-code.php'),
+            __DIR__ . '/../../config/cashier.php' => config_path('cashier.php'),
         ], 'config');
     }
 }

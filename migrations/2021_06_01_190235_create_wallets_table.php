@@ -6,6 +6,13 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected string $table;
+
+    public function __construct()
+    {
+        $this->table = (new \Ars\Cashier\Models\Wallet())->getTable();
+    }
+
     /**
      * Run the migrations.
      *
@@ -13,14 +20,11 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create(config('cashier.tables.wallets', 'wallets'), function (Blueprint $table) {
+        Schema::create($this->table, function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->morphs('walletable');
             $table->decimal('balance', 16, 4)->default(0.00);
             $table->timestamps();
-
-            // Index on user_id for better performance
-            $table->index('user_id');
         });
     }
 
@@ -31,6 +35,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists(config('cashier.tables.wallets', 'wallets'));
+        Schema::dropIfExists($this->table);
     }
 };

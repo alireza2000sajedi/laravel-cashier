@@ -1,81 +1,121 @@
 <?php
 
-
 namespace Ars\Cashier\Models\Traits;
 
 use Ars\Cashier\Models\Payment;
 use Ars\Cashier\Models\Transaction;
-use Ars\Cashier\Models\Wallet;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Support\Facades\DB;
 
 /**
- * Class User
- * @package App\Models
+ * Trait HasPay
  *
- * @property $balance
- * @property Wallet $wallet
+ * Provides payment-related functionality to models, such as managing
+ * payments, transactions, and handling payment processes.
+ *
+ * @package Ars\Cashier\Models\Traits
+ *
+ * @property-read Collection|Payment[] $payments
+ * @property-read Collection|Transaction[] $transaction
  */
 trait HasPay
 {
-    public function getBalanceAttribute(): float
+
+    /**
+     * Determine if transactions should be stored for payments.
+     *
+     * @return bool
+     */
+    protected function shouldStoreTransactionPayment(): bool
     {
-        return $this->wallet->balance ?? 0;
+        return true;
     }
 
-    public function transactions(): HasMany
+
+    /**
+     * Relationship to the user's payments.
+     *
+     * @return MorphOne
+     */
+    public function payments(): MorphOne
     {
-        return $this->hasMany(Transaction::class);
+        return $this->morphOne(Payment::class, 'paymentable');
     }
 
-    public function wallet(): HasOne
+    /**
+     * Initiates a payment process.
+     *
+     * @param  string  $authority
+     * @param  float|int  $amount
+     * @param  array  $meta
+     * @param  string|null  $refId
+     * @return Payment
+     */
+    public function requestPay(string $authority, float|int $amount, array $meta = [], ?string $refId = null): Payment
     {
-        return $this->hasOne(Wallet::class)->withDefault();
+        return DB::transaction(function () use ($amount, $authority, $meta, $refId) {
+            // Create the payment entry
+            $payment = $this->payments()->create([
+                'amount'    => $amount,
+                'gateway'   => $this->getGateway(),
+                'authority' => $authority,
+                'ref_id'    => $refId,
+            ]);
+
+            // Log the payment initiation as a transaction if enabled
+            if ($this->shouldStoreTransactionPayment()) {
+                $payment->transaction()->create([
+                    'user_id'  => auth()->id(),
+                    'amount'   => $amount,
+                    'accepted' => false, // Initially not accepted
+                    'meta'     => $meta,
+                    'type'     => 'deposit',
+                ]);
+            }
+
+            return $payment;
+        });
     }
 
-    public function payments(): HasMany
+    /**
+     * Processes the result of a payment.
+     *
+     * @param  string  $authority
+     * @param  string|null  $statusCode
+     * @param  string|null  $refId
+     * @return Payment|null
+     */
+    public function resultPay(string $authority, ?string $statusCode = null, ?string $refId = null): ?Payment
     {
-        return $this->hasMany(Payment::class);
+        return DB::transaction(function () use ($authority, $statusCode, $refId) {
+            // Update the payment details
+            $payment = $this->payments()->where('authority', $authority)->first();
+
+            if ($payment) {
+                $payment->update([
+                    'ref_id'      => $refId,
+                    'status_code' => $statusCode,
+                    'payed_at'    => now(),
+                ]);
+
+                // Update the transaction if enabled
+                if ($this->shouldStoreTransactionPayment()) {
+                    $payment->transaction?->update(['accepted' => true]);
+                }
+            }
+
+            return $payment;
+        });
     }
 
-    public function canWithdraw(float $amount, float $ceiling): bool
+    /**
+     * Defines the payment gateway to be used.
+     *
+     * @return string
+     */
+    public function getGateway(): string
     {
-        return $this->balance + $ceiling >= $amount;
+        return 'default';
     }
-
-    public function withdraw(int $amount, array $meta = []): Model
-    {
-        $accepted = $this->canWithdraw($amount, $this->wallet->ceiling_withdraw);
-
-        if ($accepted) {
-            $this->wallet->balance -= $amount;
-            $this->wallet->save();
-        } else {
-            $this->wallet->save();
-        }
-
-        return $this->wallet->transactions()->create([
-            'user_id'  => auth()->id(),
-            'amount'   => $amount,
-            'accepted' => $accepted,
-            'meta'     => $meta,
-            'type'     => __FUNCTION__,
-        ]);
-    }
-
-    public function deposit(float $amount, array $meta = []): Model
-    {
-        $this->wallet->balance += $amount;
-        $this->wallet->save();
-
-        return $this->wallet->transactions()->create([
-            'user_id'  => auth()->id(),
-            'amount'   => $amount,
-            'accepted' => true,
-            'meta'     => $meta,
-            'type'     => __FUNCTION__,
-        ]);
-    }
-
 }

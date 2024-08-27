@@ -24,8 +24,8 @@ return [
     */
 
     'tables' => [
-        'wallets' => 'wallets',
-        'transactions' => 'transactions',
-        'payments' => 'payments',
+        'wallet'      => 'wallets',
+        'payment'     => 'payments',
+        'transaction' => 'transactions',
     ],
 ];

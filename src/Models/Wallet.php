@@ -2,16 +2,18 @@
 
 namespace Ars\Cashier\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 /**
  * Class Wallet
  * @package Ars\Cashier\Models
  *
- * @property float $balance
- * @property int $ceiling_withdraw
+ * @property float|int $balance
+ * @property float|int $ceiling_withdraw
  * @property string $uuid
  */
 class Wallet extends Model
@@ -19,16 +21,16 @@ class Wallet extends Model
     /**
      * The default withdrawal ceiling, fetched from the config.
      *
-     * @var int
+     * @var float|int
      */
-    protected $ceilingWithdraw;
+    public float|int $ceilingWithdraw;
 
     public function __construct(array $attributes = [])
     {
         parent::__construct($attributes);
 
-        $this->setTable(config('cashier.tables.wallets', 'wallets'));
-        $this->ceilingWithdraw = config('cashier.ceiling_withdraw', 0);
+        $this->setTable(config('cashier.tables.wallet', 'wallets'));
+        $this->ceilingWithdraw = config('cashier.wallet.ceiling_withdraw', 0);
     }
 
     /**
@@ -41,13 +43,8 @@ class Wallet extends Model
         return $this->morphMany(Transaction::class, 'transactionable');
     }
 
-    /**
-     * Get the user who owns the wallet.
-     *
-     * @return BelongsTo
-     */
-    public function user(): BelongsTo
+    public function walletable(): MorphTo
     {
-        return $this->belongsTo(User::class);
+        return $this->morphTo();
     }
 }

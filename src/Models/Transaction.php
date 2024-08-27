@@ -12,7 +12,7 @@ class Transaction extends Model
     {
         parent::__construct($attributes);
 
-        $this->setTable(config('cashier.tables.transactions', 'transactions'));
+        $this->setTable(config('cashier.tables.transaction', 'transactions'));
     }
 
     protected $fillable = [

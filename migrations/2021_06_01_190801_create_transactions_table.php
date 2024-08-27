@@ -6,6 +6,13 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected string $table;
+
+    public function __construct()
+    {
+        $this->table = (new \Ars\Cashier\Models\Transaction())->getTable();
+    }
+
     /**
      * Run the migrations.
      *
@@ -13,15 +20,19 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create(config('cashier.tables.transactions', 'transactions'), function (Blueprint $table) {
+        Schema::create($this->table, function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->unsignedBigInteger('user_id')->nullable();
             $table->morphs('transactionable');
             $table->decimal('amount', 16, 4)->default(0.00);
             $table->enum('type', ['deposit', 'withdraw']);
             $table->boolean('accepted')->default(false);
             $table->json('meta')->nullable();
             $table->timestamps();
+
+            $table->index('user_id');
+            $table->index('type');
+            $table->index('accepted');
         });
     }
 
@@ -32,6 +43,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists(config('cashier.tables.transactions', 'transactions'));
+        Schema::dropIfExists($this->table);
     }
 };
