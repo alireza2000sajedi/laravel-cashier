@@ -27,8 +27,7 @@ composer require ars/laravel-cashier
 After installation, publish the configuration and migration files:
 
 ```bash
-php artisan vendor:publish --tag="cashier-config"
-php artisan vendor:publish --tag="cashier-migrations"
+php artisan vendor:publish --provider="Ars\Cashier\Providers\CashierServiceProvider"
 ```
 
 Then, run the migrations:
