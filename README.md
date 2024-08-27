@@ -195,7 +195,3 @@ Contributions are welcome! Please submit a pull request or create an issue for a
 ## Support
 
 For any issues, please visit the [Issues page](https://github.com/alireza2000sajedi/laravel-cashier/issues).
-
----
-
-This version of the `README.md` includes more detailed usage examples, demonstrating how to use the key features of the package.
