@@ -2,6 +2,7 @@
 
 namespace Ars\Cashier\Models;
 
+use Ars\Cashier\Models\Traits\HasTransaction;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
@@ -9,6 +10,9 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Payment extends Model
 {
+
+    use HasTransaction;
+
     /**
      * Payment constructor.
      *
@@ -42,20 +46,21 @@ class Payment extends Model
      */
     protected $casts = [
         'payed_at' => 'datetime',
+        'amount'   => 'float',
     ];
-
-    /**
-     * Get all transactions for the payment.
-     *
-     * @return MorphOne
-     */
-    public function transaction(): MorphOne
-    {
-        return $this->morphOne(Transaction::class, 'transactionable');
-    }
 
     public function paymentable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /**
+     * Determine if the payment has been successfully processed.
+     *
+     * @return bool
+     */
+    public function isPayed(): bool
+    {
+        return !is_null($this->payed_at);
     }
 }

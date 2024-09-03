@@ -42,7 +42,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Ars\\Cashier\\Providers\\CashierServiceProvider"
+                "Ars\\Cashier\\CashierServiceProvider"
             ]
         }
     }

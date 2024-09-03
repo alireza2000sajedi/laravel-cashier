@@ -16,7 +16,12 @@ class Transaction extends Model
     }
 
     protected $fillable = [
-        'amount', 'type', 'user_id', 'section', 'accepted', 'meta',
+        'amount',
+        'type',
+        'user_id',
+        'section',
+        'accepted',
+        'meta',
     ];
 
     protected $casts = [
@@ -27,5 +32,34 @@ class Transaction extends Model
     public function transactionable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+
+    /**
+     * Add or update metadata in the transaction.
+     *
+     * @param  array  $newMeta
+     * @return $this
+     */
+    public function addMeta(array $newMeta)
+    {
+        $meta = array_merge($this->meta ?? [], $newMeta);
+        $this->meta = $meta;
+        $this->save();
+
+        return $this;
+    }
+
+    /**
+     * Reset the metadata in the transaction.
+     *
+     * @return $this
+     */
+    public function resetMeta()
+    {
+        $this->meta = [];
+        $this->save();
+
+        return $this;
     }
 }

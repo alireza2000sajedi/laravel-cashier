@@ -21,6 +21,8 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
 trait HasWallet
 {
 
+    use HasTransaction;
+
     /**
      * Determine if transactions should be stored for wallet.
      *

@@ -3,7 +3,6 @@
 namespace Ars\Cashier\Models\Traits;
 
 use Ars\Cashier\Models\Payment;
-use Ars\Cashier\Models\Transaction;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Facades\DB;
@@ -11,8 +10,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * Trait HasPay
  *
- * Provides payment-related functionality to models, such as managing
- * payments, transactions, and handling payment processes.
+ * Provides payment-related functionality to models, such as initiating payments,
+ * processing payment results, and managing transactions associated with payments.
  *
  * @package Ars\Cashier\Models\Traits
  *
@@ -21,20 +20,10 @@ use Illuminate\Support\Facades\DB;
  */
 trait HasPay
 {
+    use HasTransaction;
 
     /**
-     * Determine if transactions should be stored for payments.
-     *
-     * @return bool
-     */
-    protected function shouldStoreTransactionPayment(): bool
-    {
-        return true;
-    }
-
-
-    /**
-     * Relationship to the user's payments.
+     * Defines a morph-one relationship to the Payment model.
      *
      * @return MorphOne
      */
@@ -44,7 +33,18 @@ trait HasPay
     }
 
     /**
-     * Initiates a payment process.
+     * Finds a payment by its authority and loads the associated transaction.
+     *
+     * @param  string  $authority
+     * @return Payment|null
+     */
+    public function findAuthority(string $authority): ?Payment
+    {
+        return $this->payments()->where('authority', $authority)->with('transaction')->first();
+    }
+
+    /**
+     * Initiates a payment process and creates an associated transaction.
      *
      * @param  string  $authority
      * @param  float|int  $amount
@@ -63,34 +63,32 @@ trait HasPay
                 'ref_id'    => $refId,
             ]);
 
-            // Log the payment initiation as a transaction if enabled
-            if ($this->shouldStoreTransactionPayment()) {
-                $payment->transaction()->create([
-                    'user_id'  => auth()->id(),
-                    'amount'   => $amount,
-                    'accepted' => false, // Initially not accepted
-                    'meta'     => $meta,
-                    'type'     => 'deposit',
-                ]);
-            }
+            // Create a related transaction for this payment
+            $payment->transaction()->create([
+                'user_id'  => auth()->id(),
+                'amount'   => $amount,
+                'accepted' => false, // Initially set as not accepted
+                'meta'     => $meta,
+                'type'     => 'deposit',
+            ]);
 
             return $payment;
         });
     }
 
     /**
-     * Processes the result of a payment.
+     * Processes a successful payment, updating the payment and its transaction.
      *
      * @param  string  $authority
      * @param  string|null  $statusCode
      * @param  string|null  $refId
      * @return Payment|null
      */
-    public function resultPay(string $authority, ?string $statusCode = null, ?string $refId = null): ?Payment
+    public function resultSuccessPay(string $authority, ?string $statusCode = null, ?string $refId = null): ?Payment
     {
         return DB::transaction(function () use ($authority, $statusCode, $refId) {
-            // Update the payment details
-            $payment = $this->payments()->where('authority', $authority)->first();
+            // Find and update the payment details
+            $payment = $this->findAuthority($authority);
 
             if ($payment) {
                 $payment->update([
@@ -99,9 +97,36 @@ trait HasPay
                     'payed_at'    => now(),
                 ]);
 
-                // Update the transaction if enabled
-                if ($this->shouldStoreTransactionPayment()) {
-                    $payment->transaction?->update(['accepted' => true]);
+                // Mark the transaction as accepted
+                $payment->transaction->update(['accepted' => true]);
+            }
+
+            return $payment;
+        });
+    }
+
+    /**
+     * Processes a failed payment, updating the payment and its transaction.
+     *
+     * @param  string  $authority
+     * @param  string|null  $statusCode
+     * @param  string|null  $message
+     * @return Payment|null
+     */
+    public function resultFailedPay(string $authority, ?string $statusCode = null, ?string $message = null): ?Payment
+    {
+        return DB::transaction(function () use ($authority, $statusCode, $message) {
+            // Find and update the payment details
+            $payment = $this->findAuthority($authority);
+
+            if ($payment) {
+                $payment->update([
+                    'status_code' => $statusCode,
+                ]);
+
+                // Add failure message to the transaction's metadata if provided
+                if ($message) {
+                    $payment->transaction->addMeta(['message' => $message]);
                 }
             }
 

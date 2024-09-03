@@ -1,6 +1,6 @@
 <?php
 
-namespace Ars\Cashier\Providers;
+namespace Ars\Cashier;
 
 use Illuminate\Support\ServiceProvider;
 
@@ -21,12 +21,12 @@ class CashierServiceProvider extends ServiceProvider
     {
         // Publish migration files
         $this->publishes([
-            __DIR__ . '/../../migrations' => database_path('migrations'),
+            __DIR__.'/../../migrations' => database_path('migrations'),
         ], 'migrations');
 
         // Publish configuration file
         $this->publishes([
-            __DIR__ . '/../../config/cashier.php' => config_path('cashier.php'),
+            __DIR__.'/../../config/cashier.php' => config_path('cashier.php'),
         ], 'config');
     }
 }

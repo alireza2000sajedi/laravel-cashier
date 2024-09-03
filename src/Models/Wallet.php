@@ -3,6 +3,7 @@
 namespace Ars\Cashier\Models;
 
 use App\Models\User;
+use Ars\Cashier\Models\Traits\HasTransaction;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,6 +19,9 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  */
 class Wallet extends Model
 {
+
+    use HasTransaction;
+
     /**
      * The default withdrawal ceiling, fetched from the config.
      *
@@ -31,16 +35,6 @@ class Wallet extends Model
 
         $this->setTable(config('cashier.tables.wallet', 'wallets'));
         $this->ceilingWithdraw = config('cashier.wallet.ceiling_withdraw', 0);
-    }
-
-    /**
-     * Get all transactions for the wallet.
-     *
-     * @return MorphMany
-     */
-    public function transactions(): MorphMany
-    {
-        return $this->morphMany(Transaction::class, 'transactionable');
     }
 
     public function walletable(): MorphTo
